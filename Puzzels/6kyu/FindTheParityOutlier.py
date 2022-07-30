@@ -1,4 +1,4 @@
-# codewars challange link
+# codewars challenge link
 # https://www.codewars.com/kata/5526fc09a1bbd946250002dc/python
 
 
