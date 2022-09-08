@@ -1,7 +1,9 @@
 # codewars challenge link
 # https://www.codewars.com/kata/5519a584a73e70fa570005f5
+# help with https://www.youtube.com/watch?v=xwM8PGBYazM
 
-from itertools import repeat
+import numpy as np
+
 
 def smallest_multiple_of_n_geq_m(n, m):
     return m + ((n - (m % n)) % n)
@@ -10,25 +12,34 @@ def smallest_multiple_of_n_geq_m(n, m):
 class Primes:
     @staticmethod
     def stream():
-        primes = [2, 3, 5, 7]
+        dtype = np.int64
+        primes = np.array([2, 3, 5, 7], dtype=dtype)
         end_segment = 1
+        dtype_max = np.iinfo(dtype).max
         n = 100
         while len(primes) < 1000000:
             k = end_segment
             n = min(n, len(primes) - 1 - k)
-            p = primes[k]
-            q = primes[k + n]
-            segment = range(p * p, q * q)
-            segment_min = min(segment)
-            segment_len = len(segment)
-            is_prime = [True] * segment_len
+            p, q = int(primes[k]), int(primes[k + n])
+            segment_min, segment_max = p * p, q * q - 1
+            if segment_max > dtype_max:
+                raise RuntimeError("overflow, use a larger dtype or pure python implementation")
 
-            for i in range(k + n):
-                pk = primes[i]
+            segment_len = segment_max - segment_min + 1
+            is_prime = np.full(shape=segment_len, fill_value=True, dtype=bool)
+            for pk in primes[:k + n]:
+                pk = int(pk)
                 start = smallest_multiple_of_n_geq_m(pk, segment_min)
-                is_prime[start - segment_min::pk] = repeat(False, len(range(start - segment_min, segment_len, pk)))
+                is_prime[start - segment_min::pk] = False
 
-            primes.extend([x for x, it_is_prime in zip(segment, is_prime) if it_is_prime])
+            segment = np.arange(p * p, q * q, dtype=dtype)
+            new_primes = segment[is_prime]
+            try:
+                old_len = len(primes)
+                primes.resize(old_len + len(new_primes))
+                primes[old_len:] = new_primes
+            except ValueError:
+                primes = np.concatenate((primes, new_primes))
             end_segment += n
         return iter(primes)
 
